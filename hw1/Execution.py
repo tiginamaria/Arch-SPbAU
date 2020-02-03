@@ -27,7 +27,7 @@ class EchoExecutable(Executable):
 
 class PwdExecutable(Executable):
     
-    def __int__(self, args):
+    def __init__(self, args):
         pass
 
     def execute(self, input_bytes, state):
