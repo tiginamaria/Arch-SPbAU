@@ -28,7 +28,7 @@ class ExecutionTest(unittest.TestCase):
         self.assertIsInstance(executable, Execution.CatExecutable)
 
         res = executable.execute(b"", self.state)
-        self.assertEqual(b"some text\n", res)
+        self.assertEqual(("some text" + os.linesep).encode('utf-8'), res)
 
     def test_cat_executable_empty_file(self):
         command = CLI.Command("cat", ["empty_file"])
@@ -37,7 +37,7 @@ class ExecutionTest(unittest.TestCase):
         self.assertIsInstance(executable, Execution.CatExecutable)
 
         res = executable.execute(b"", self.state)
-        self.assertEqual(b"\n", res)
+        self.assertEqual((os.linesep).encode('utf-8'), res)
 
     def test_cat_executable_no_file(self):
         command = CLI.Command("cat", ["no_file"])
@@ -91,14 +91,6 @@ class ExecutionTest(unittest.TestCase):
         self.assertEqual(False, self.state.is_program_terminated())
         executable.execute(b"", self.state)
         self.assertEqual(True, self.state.is_program_terminated())
-
-    def test_call_executable(self):
-        command = CLI.Command("dir", [])
-        executable = Execution.ExecutableCLIFactory.create_executable(command)
-
-        self.assertIsInstance(executable, Execution.CallExecutable)
-
-        executable.execute(b"", self.state)
 
     def test_call_executable_no_such_command(self):
         command = CLI.Command("no_file", [])
