@@ -6,8 +6,19 @@ import re
 import argparse
 
 class Command:
+    """ Represents a command parsed from text """
 
     def __init__(self, name, args):
+        """ Constructs an object with just a name and args
+
+        Parameters.
+        name: str
+            The name which is to be stored as name of the command
+        args: str[]
+            The arguments which are to be stored as arguments of the command
+
+        """
+
         self.name = name
         self.args = args
 
@@ -15,8 +26,20 @@ class Command:
         return "name={0}\nargs:\n{1}".format(self.name, self.args)
 
 class CommandParser:
+    """ Represents a parser with the single method which parses a command from text """
 
     def parse_command(text_command):
+        """ Parses a command from text
+
+        Parameters.
+        text_command: str
+            The text from which a command is about to be parsed
+
+        Returns.
+        Command
+            The command parsed from a text
+        """
+
         result = []
         current = []
         is_strong_quoting_on = False
@@ -49,12 +72,27 @@ class CommandParser:
 
 
 class LineParser:
+    """ Represents a parser with the single method which parses a series of commands from the given line """
 
     def __init__(self, state):
+        """ Construct an object with given state of the execution
+
+        Parameters.
+        state: State.State
+            The state of the execution for which the parser should parse
+        """
+
         self.state = state
         self.pipe_splitter = WordSplitter(['|'], quoting_type='weak')
 
     def parse_line(self, line):
+        """ Parses commands from the given line
+
+        Parameters.
+        line: str
+            The line from which commands are to be parsed
+        """
+
         text_commands = self.pipe_splitter.split_line(line)
         substitutor = ContextSubstitutor(self.state)
         commands = []
@@ -67,8 +105,18 @@ class LineParser:
 
 
 class UserInteraction:
+    """ Represent the main CLI worker of the application """
         
     def loop(input_stream, output_stream):
+        """ Performs loop for interacting with the user
+
+        Parameters.
+        input_stream: TextIOBase
+            The text input stream through which the user will send commands to the application
+        output_stream: TextIOBase
+            The text output stream through which the responses to the user's commands are to be delivered
+        """
+
         state = State.State()
 
         while not state.is_program_terminated():
@@ -105,17 +153,43 @@ class UserInteraction:
 
 
 class WordSplitter:
+    """ Represents a part of the parsing complex -- word splitter (or tokenizer), which splits a line into tokens """
 
     def __init__(self, split_by, quoting_type):
+        """ Construct an object of the splitter with given delimiters and quoting type
+
+        Parameters.
+        split_by: str
+            The string containing all delimiters about which the splitter will care
+        quoting_type: str
+            Must be either 'weak' or 'strong'. 'Weak' means that both of quotationg will affect splitting weak and strong.
+            'Strong', contratily, means that only strong quotation will affect splitting, weak one, at the same time, will be ignored.
+
+        Raises.
+        ValueError
+            If the quoting_type given to this constructor is wrong
+        """
+
         self.split_by = split_by
         if quoting_type == 'weak':
             self.weak_quoting_type = True
         elif quoting_type == 'strong':
             self.weak_quoting_type = False
         else:
-            raise ValueError()
+            raise ValueError('Unsupported quoting type')
 
     def split_line(self, line):
+        """ Splits the given line into several strings
+
+        Parameters.
+        line: str
+            The line which is to be splitted
+
+        Returns.
+        str[]
+            The list of strings got from the splitting process
+        """
+
         is_strong_quoting_on = False
         is_weak_quoting_on = False
 
@@ -144,11 +218,30 @@ class WordSplitter:
 
 
 class ContextSubstitutor:
+    """ Represents a part of the parsing complex -- context substitutor, which evaluates substitutions according to the given state """
 
     def __init__(self, state):
+        """ Constructs an object with the given state
+
+        Parameters.
+        state: State.State
+            The state of execution from which values of variables will be taken
+        """
+
         self.state = state
 
     def substitute(self, command):
+        """ Performs evaluation of substitutions in the given text of the command
+
+        Parameters.
+        command: str
+            The text of the command inside which substitutions are to be evaluated
+
+        Returns.
+        str
+            The modified text of the command with substitutions evaluated
+        """
+        
         is_strong_quoting_on = False
 
         i = 0
