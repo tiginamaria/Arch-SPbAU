@@ -1,5 +1,5 @@
 language: python
 
-install: pip install --user -r requirements.txt
+install: pip install -r requirements.txt
 
 script: for dir in */; do (cd $dir && python3 -m unittest); done
