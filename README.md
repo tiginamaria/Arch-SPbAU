@@ -25,7 +25,9 @@ Click library is a wrapper of (or framework based on) optparse. So you don't nee
 Let's then describe click and why it's better than argparse (except argparse is kinda stupid already).
 
 (+) Click has nice decorator syntax to create parsers (commands)
+
 (+) Automatically generates help messages (but they were disabled, 'cause '--help' option unconditionally exits program)
+
 (+) Has built-in messages for help to use a command (i.e. illegal option ...)
 
 The following are the only pros which were affecting me.
