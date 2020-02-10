@@ -38,6 +38,7 @@ class Executable:
         raise NotImplementedError()
 
 class GrepExecutable(Executable):
+    """ Represents executable for an GREP command which parse files and finds patterns """
 
     @click.command(name="grep", add_help_option=False)
     @click.option('-i', 'case_insensitive', is_flag=True)
@@ -47,6 +48,21 @@ class GrepExecutable(Executable):
     @click.argument("files", nargs=-1)
     @click.pass_obj
     def parser(self, case_insensitive, only_whole_words, lines_after, regex, files):
+        """ Callback for a click.Command for parsing arguments for the command. Put them into callee object
+
+        Parameters.
+        case_insensitive: boolean
+            Whether or not the search must respect symbols case
+        only_whole_words: boolean
+            Whether or not the search must find only whole world matching pattern
+        lines_after: boolean
+            How many line (except matched) will be printed after the match (default: 0)
+        regex: string
+            The regular expression which represents the pattern to search
+        files: string[]
+            The files in which the search will be performed. If empty then from input byte sequence
+
+        """
         self.case_insensitive = case_insensitive
         self.only_whole_words = only_whole_words
         self.lines_after = lines_after
@@ -54,6 +70,8 @@ class GrepExecutable(Executable):
         self.files = files
 
     def __init__(self, args):
+        """ Constructs a command object with given arguments """
+
         try:
             ctx = GrepExecutable.parser.make_context("grep", args, obj=self)
         except (click.ClickException, click.Abort) as e:
@@ -64,14 +82,23 @@ class GrepExecutable(Executable):
             GrepExecutable.parser.invoke(ctx)
 
         self.parsing_exception = None
-        # ctx.invoke(GrepExecutable.parser)
-        # self.args = GrepExecutable.parser.parse_args(None, args)
 
     def execute(self, input_bytes, state):
+        """ Executing executable
+        
+        Parameters.
+        input_bytes: bytes
+            Input byte sequence given as stdin to the command
+        state: State.State
+            Initial execution state
+
+        Returns.
+        bytes
+            Output byte sequence of command.
+        """
+
         if self.parsing_exception is not None:
             raise ExecutionError(self.parsing_exception)
-
-        # print("{0}, {1}, {2}, {3}\n".format(self.case_insensitive, self.only_whole_words, self.lines_after, self.regex))
 
         if not self.files:
             text = input_bytes.decode('utf-8').split('\n')
@@ -90,11 +117,20 @@ class GrepExecutable(Executable):
         res = []
         for (text, filename) in searchables:
             res.append("{0}:\n".format(filename))
-            res.extend(self.process_searchable(text))
+            res.extend(self.process_lines(text))
 
         return ''.join(res).encode('utf-8')
 
-    def process_searchable(self, lines):
+    def process_lines(self, lines):
+        """ Process lines and return formatted matched lines and other context
+
+        Parameters.
+        lines: string[]
+
+        Returns.
+        Blocks of lines separated by '--' where each block contains one or several matched lines and given number of lines after a match
+
+        """
         regex = self.regex
         if self.only_whole_words:
             regex = r"\b" + regex + r"\b"
