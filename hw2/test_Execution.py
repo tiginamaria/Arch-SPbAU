@@ -28,7 +28,7 @@ class ExecutionTest(unittest.TestCase):
         self.assertIsInstance(executable, Execution.CatExecutable)
 
         res = executable.execute(b"", self.state)
-        self.assertEqual(("some text" + os.linesep).encode('utf-8'), res)
+        self.assertEqual(("some text\n").encode('utf-8'), res)
 
     def test_cat_executable_empty_file(self):
         command = CLI.Command("cat", ["empty_file"])
@@ -37,7 +37,7 @@ class ExecutionTest(unittest.TestCase):
         self.assertIsInstance(executable, Execution.CatExecutable)
 
         res = executable.execute(b"", self.state)
-        self.assertEqual((os.linesep).encode('utf-8'), res)
+        self.assertEqual(("\n").encode('utf-8'), res)
 
     def test_cat_executable_no_file(self):
         command = CLI.Command("cat", ["no_file"])
