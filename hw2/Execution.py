@@ -362,7 +362,7 @@ class CallExecutable(Executable):
         """
 
         try:
-            raise NotImplementedError("External calls temporarily disabled")
+            # raise NotImplementedError("External calls temporarily disabled")
             completed_subprocess = subprocess.run(args=self.args, input=input_bytes, stdout=subprocess.PIPE)
             return completed_subprocess.stdout
         except Exception as e:
