@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 import CLI
 import State
@@ -9,8 +10,13 @@ import os
 # @unittest.SkipTest
 class ExecutionTest(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(self):
+        self.project_dir = os.getcwd()
+
     def setUp(self):
         self.state = State.State()
+        os.chdir(self.project_dir)
 
     def test_echo_executable(self):
         command = CLI.Command("echo", ["arg1", "arg2"])
@@ -48,7 +54,6 @@ class ExecutionTest(unittest.TestCase):
         with self.assertRaises(Execution.ExecutionError):
             res = executable.execute(b"", self.state)
 
-
     def test_pwd_executable(self):
         command = CLI.Command("pwd", [])
         executable = Execution.ExecutableCLIFactory.create_executable(command)
@@ -57,6 +62,116 @@ class ExecutionTest(unittest.TestCase):
 
         res = executable.execute(b"", self.state)
         self.assertEqual((os.getcwd() + '\n').encode('utf-8'), res)
+
+    def test_cd_executable_no_args(self):
+        command = CLI.Command("cd", [])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+
+        self.assertIsInstance(executable, Execution.CdExecutable)
+
+        res = executable.execute(b"", self.state)
+        self.assertEqual(b"", res)
+        self.assertEqual(str(Path.home()), os.getcwd())
+
+    def test_cd_executable(self):
+        arg = "resources" + os.path.sep + "directory1"
+        command = CLI.Command("cd", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.CdExecutable)
+
+        expected_dir = os.path.join(os.path.sep, os.getcwd(), arg)
+        executable.execute(b"", self.state)
+        self.assertEqual(expected_dir, os.getcwd())
+
+    def test_cd_executable_arg_back(self):
+        dir1, dir2 = "resources", "directory1"
+        arg = dir1 + os.path.sep + dir2
+        command = CLI.Command("cd", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.CdExecutable)
+
+        root_dir = os.getcwd()
+        expected_dir = os.path.join(os.path.sep, root_dir, arg)
+        executable.execute(b"", self.state)
+        self.assertEqual(expected_dir, os.getcwd())
+
+        arg = ".."
+        command = CLI.Command("cd", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.CdExecutable)
+
+        expected_dir = os.path.join(os.path.sep, root_dir, dir1)
+        executable.execute(b"", self.state)
+        self.assertEqual(expected_dir, os.getcwd())
+
+    def test_cd_pwd_executable(self):
+        arg = "resources" + os.path.sep + "directory1"
+        command = CLI.Command("cd", [arg])
+        executable_cd = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable_cd, Execution.CdExecutable)
+
+        command = CLI.Command("pwd", [])
+        executable_pwd = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable_pwd, Execution.PwdExecutable)
+
+        expected_dir = os.path.join(os.path.sep, os.getcwd(), arg)
+        executable_cd.execute(b"", self.state)
+        dir = executable_pwd.execute(b"", self.state)
+        self.assertEqual((expected_dir + '\n').encode('utf-8'), dir)
+
+    def test_cd_executable_exceptions(self):
+        arg = "no_such_directory"
+        command = CLI.Command("cd", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.CdExecutable)
+        self.assertRaises(Execution.ExecutionError, executable.execute, b"", self.state)
+
+        arg = "CLI.py"
+        command = CLI.Command("cd", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.CdExecutable)
+        self.assertRaises(Execution.ExecutionError, executable.execute, b"", self.state)
+
+    def test_ls_executable_no_args(self):
+        arg = "resources"
+        command = CLI.Command("cd", [arg])
+        executable_cd = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable_cd, Execution.CdExecutable)
+        executable_cd.execute(b"", self.state)
+
+        command = CLI.Command("ls", [])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.LsExecutable)
+        res = executable.execute(b"", self.state)
+        self.assertEqual({"directory1", "file1"}, set(res.decode('utf-8').strip('\n').split('\n')))
+
+    def test_ls_executable(self):
+        arg = "resources"
+        command = CLI.Command("ls", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.LsExecutable)
+        res = executable.execute(b"", self.state)
+        self.assertEqual({"directory1", "file1"}, set(res.decode('utf-8').strip('\n').split('\n')))
+
+        arg = "resources" + os.path.sep + "directory1"
+        command = CLI.Command("ls", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.LsExecutable)
+        res = executable.execute(b"", self.state)
+        self.assertEqual({"file2", "file3"}, set(res.decode('utf-8').strip('\n').split('\n')))
+
+    def test_ls_executable_exceptions(self):
+        arg = "no_such_directory"
+        command = CLI.Command("ls", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.LsExecutable)
+        self.assertRaises(Execution.ExecutionError, executable.execute, b"", self.state)
+
+        arg = "CLI.py"
+        command = CLI.Command("ls", [arg])
+        executable = Execution.ExecutableCLIFactory.create_executable(command)
+        self.assertIsInstance(executable, Execution.LsExecutable)
+        self.assertRaises(Execution.ExecutionError, executable.execute, b"", self.state)
 
     def test_wc_executable(self):
         command = CLI.Command("wc", [])

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import CLI
 import State
 
@@ -303,16 +305,16 @@ class CdExecutable(Executable):
         if len(self.args) > 1:
             raise ExecutionError('Error executing a command cd. Expected 0-1 arguments, got {}:{}'
                                  .format(len(self.args), self.args))
-        elif len(self.args) == 1:
-            try:
-                directory = os.path.expanduser(self.args[0])
-                os.chdir(directory)
-            except FileNotFoundError:
-                raise ExecutionError('Error executing a command cd. No such directory: {}'.format(self.args[0]))
-            except NotADirectoryError:
-                raise ExecutionError('Error executing a command cd. Not a directory: {}'.format(self.args[0]))
-            except OSError:
-                raise ExecutionError('Error executing a command cd. Can not list directory: {}'.format(self.args[0]))
+        try:
+            directory = os.path.expanduser(self.args[0]) if len(self.args) == 1 else str(Path.home())
+            os.chdir(directory)
+        except FileNotFoundError:
+            raise ExecutionError('Error executing a command cd. No such directory: {}'.format(self.args[0]))
+        except NotADirectoryError:
+            raise ExecutionError('Error executing a command cd. Not a directory: {}'.format(self.args[0]))
+        except OSError:
+            raise ExecutionError('Error executing a command cd. Can not list directory: {}'.format(self.args[0]))
+
         return b''
 
 
@@ -390,7 +392,7 @@ class ExitExecutable(Executable):
 
     def execute(self, input_bytes, state):
         """ Executing executable
-        
+
         Parameters.
         input_bytes: bytes
             Input byte sequence given as stdin to the command

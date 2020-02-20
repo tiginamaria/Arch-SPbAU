@@ -125,8 +125,8 @@ class LineParserTest(unittest.TestCase):
 
     def test_complex_case(self):
         line_parser = CLI.LineParser(self.state)
-        commands = line_parser.parse_line("echo kek | a=4 | pwd | wc | grep -iA hello")
-        self.assertEqual(5, len(commands))
+        commands = line_parser.parse_line("echo kek | a=4 | pwd | wc | grep -iA hello | cd | ls /home")
+        self.assertEqual(7, len(commands))
 
         self.assertEqual("echo", commands[0].name)
         self.assertEqual(1, len(commands[0].args))
@@ -143,3 +143,10 @@ class LineParserTest(unittest.TestCase):
         self.assertEqual(2, len(commands[4].args))
         self.assertEqual("-iA", commands[4].args[0])
         self.assertEqual("hello", commands[4].args[1])
+
+        self.assertEqual("cd", commands[5].name)
+        self.assertEqual(0, len(commands[5].args))
+
+        self.assertEqual("ls", commands[6].name)
+        self.assertEqual(1, len(commands[6].args))
+        self.assertEqual("/home", commands[6].args[0])
