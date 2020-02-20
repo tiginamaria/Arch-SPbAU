@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import CLI
 import State
 
@@ -279,6 +281,78 @@ class WcExecutable(Executable):
 
         return "{0} {1} {2}\n".format(lines, words, bytes).encode('utf-8')
 
+
+class CdExecutable(Executable):
+    """ Represents executable for an CD command which change the shell working directory """
+
+    def __init__(self, args):
+        self.args = args
+
+    def execute(self, input_bytes, state):
+        """ Executing executable
+
+        Parameters.
+        input_bytes: bytes
+            Input byte sequence given as stdin to the command
+        state: State.State
+            Initial execution state
+
+        Returns.
+        bytes
+            Output byte sequence of command.
+        """
+
+        if len(self.args) > 1:
+            raise ExecutionError('Error executing a command cd. Expected 0-1 arguments, got {}:{}'
+                                 .format(len(self.args), self.args))
+        try:
+            directory = os.path.expanduser(self.args[0]) if len(self.args) == 1 else str(Path.home())
+            os.chdir(directory)
+        except FileNotFoundError:
+            raise ExecutionError('Error executing a command cd. No such directory: {}'.format(self.args[0]))
+        except NotADirectoryError:
+            raise ExecutionError('Error executing a command cd. Not a directory: {}'.format(self.args[0]))
+        except OSError:
+            raise ExecutionError('Error executing a command cd. Can not list directory: {}'.format(self.args[0]))
+
+        return b''
+
+
+class LsExecutable(Executable):
+    """ Represents executable for an LS command which list directory contents """
+
+    def __init__(self, args):
+        self.args = args
+
+    def execute(self, input_bytes, state):
+        """ Executing executable
+
+        Parameters.
+        input_bytes: bytes
+            Input byte sequence given as stdin to the command
+        state: State.State
+            Initial execution state
+
+        Returns.
+        bytes
+            Output byte sequence of command.
+        """
+
+        if len(self.args) > 1:
+            raise ExecutionError('Error executing a command ls. Expected 0-1 arguments, got {}:{}'
+                                 .format(len(self.args), self.args))
+        directory = self.args[0] if len(self.args) == 1 else '.'
+        try:
+            content = os.listdir(directory)
+        except FileNotFoundError:
+            raise ExecutionError('Error executing a command ls. No such directory: {}'.format(directory))
+        except NotADirectoryError:
+            raise ExecutionError('Error executing a command ls. Not a directory: {}'.format(directory))
+        except OSError:
+            raise ExecutionError('Error executing a command ls. Can not list directory: {}'.format(directory))
+        return ('\n'.join(content) + '\n').encode('utf-8')
+
+
 class AssignExecutable(Executable):
     """ Represents assignment expression var_name=var_value, changes the OS's environment correspondingly """
 
@@ -318,7 +392,7 @@ class ExitExecutable(Executable):
 
     def execute(self, input_bytes, state):
         """ Executing executable
-        
+
         Parameters.
         input_bytes: bytes
             Input byte sequence given as stdin to the command
@@ -391,5 +465,9 @@ class ExecutableCLIFactory():
             return CatExecutable(command.args)
         elif command.name == 'wc':
             return WcExecutable(command.args)
+        elif command.name == 'cd':
+            return CdExecutable(command.args)
+        elif command.name == 'ls':
+            return LsExecutable(command.args)
         else:
             return CallExecutable([command.name] + command.args)
